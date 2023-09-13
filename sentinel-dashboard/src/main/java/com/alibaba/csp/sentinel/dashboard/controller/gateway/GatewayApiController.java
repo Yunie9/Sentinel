@@ -26,6 +26,7 @@ import com.alibaba.csp.sentinel.dashboard.domain.vo.gateway.api.AddApiReqVo;
 import com.alibaba.csp.sentinel.dashboard.domain.vo.gateway.api.ApiPredicateItemVo;
 import com.alibaba.csp.sentinel.dashboard.domain.vo.gateway.api.UpdateApiReqVo;
 import com.alibaba.csp.sentinel.dashboard.repository.gateway.InMemApiDefinitionStore;
+import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleProviderPublisher;
 import com.alibaba.csp.sentinel.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,11 @@ public class GatewayApiController {
     @Autowired
     private InMemApiDefinitionStore repository;
 
+    // @Autowired
+    // private SentinelApiClient sentinelApiClient;
+
     @Autowired
-    private SentinelApiClient sentinelApiClient;
+    ApolloRuleProviderPublisher<List<ApiDefinitionEntity>> providerPublisher;
 
     @GetMapping("/list.json")
     @AuthAction(AuthService.PrivilegeType.READ_RULE)
@@ -63,15 +67,16 @@ public class GatewayApiController {
         if (StringUtil.isEmpty(app)) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-        if (StringUtil.isEmpty(ip)) {
+        /*if (StringUtil.isEmpty(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }
+        }*/
 
         try {
-            List<ApiDefinitionEntity> apis = sentinelApiClient.fetchApis(app, ip, port).get();
+            // List<ApiDefinitionEntity> apis = sentinelApiClient.fetchApis(app, ip, port).get();
+            List<ApiDefinitionEntity> apis = providerPublisher.getRules(app);
             repository.saveAll(apis);
             return Result.ofSuccess(apis);
         } catch (Throwable throwable) {
@@ -93,15 +98,15 @@ public class GatewayApiController {
         entity.setApp(app.trim());
 
         String ip = reqVo.getIp();
-        if (StringUtil.isBlank(ip)) {
+        /*if (StringUtil.isBlank(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
-        }
+        }*/
         entity.setIp(ip.trim());
 
         Integer port = reqVo.getPort();
-        if (port == null) {
+        /*if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }
+        }*/
         entity.setPort(port);
 
         // API名称
@@ -228,7 +233,6 @@ public class GatewayApiController {
 
     @PostMapping("/delete.json")
     @AuthAction(AuthService.PrivilegeType.DELETE_RULE)
-
     public Result<Long> deleteApi(Long id) {
         if (id == null) {
             return Result.ofFail(-1, "id can't be null");
@@ -254,7 +258,15 @@ public class GatewayApiController {
     }
 
     private boolean publishApis(String app, String ip, Integer port) {
-        List<ApiDefinitionEntity> apis = repository.findAllByMachine(MachineInfo.of(app, ip, port));
-        return sentinelApiClient.modifyApis(app, ip, port, apis);
+        // List<ApiDefinitionEntity> apis = repository.findAllByMachine(MachineInfo.of(app, ip, port));
+        List<ApiDefinitionEntity> apis = repository.findAllByApp(app);
+        // return sentinelApiClient.modifyApis(app, ip, port, apis);
+        try {
+            providerPublisher.publish(app, apis);
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to publish apis", e);
+            return false;
+        }
     }
 }

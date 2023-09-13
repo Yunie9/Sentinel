@@ -15,8 +15,11 @@
  */
 package com.alibaba.csp.sentinel.dashboard.rule.apollo;
 
-import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
+import com.alibaba.csp.sentinel.dashboard.datasource.entity.gateway.ApiDefinitionEntity;
+import com.alibaba.csp.sentinel.dashboard.datasource.entity.gateway.GatewayFlowRuleEntity;
+import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.*;
 import com.alibaba.csp.sentinel.datasource.Converter;
+import com.alibaba.csp.sentinel.slots.system.SystemRule;
 import com.alibaba.fastjson.JSON;
 import com.ctrip.framework.apollo.openapi.client.ApolloOpenApiClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +34,14 @@ import java.util.List;
  */
 @Configuration
 public class ApolloConfig {
+    // Apollo key postfix，e.g. ${appName}-flow-rules
+    public static final String FLOW_RULES_KEY_POSTFIX = "-flow-rules";
+    public static final String GW_FLOW_RULES_KEY_POSTFIX = "-gw-flow-rules";
+    public static final String GW_API_DEFINITIONS_KEY_POSTFIX = "-api-definitions";
+    public static final String SYSTEM_RULES_KEY_POSTFIX = "-system-rules";
+    public static final String DEGRADE_RULES_KEY_POSTFIX = "-degrade-rules";
+    public static final String PARAM_FLOW_RULES_KEY_POSTFIX = "-param-flow-rules";
+    public static final String AUTHORITY_RULES_KEY_POSTFIX = "-authority-rules";
 
     @Value("${apollo.meta}")
     private String portalUrl;
@@ -86,19 +97,70 @@ public class ApolloConfig {
     public ApolloRuleProviderPublisher<List<FlowRuleEntity>> flowRuleProviderPublisher() {
         return new ApolloRuleProviderPublisher<>(
                 apolloApiClient(),
-                appName -> appName + "-flow-rules",
+                appName -> appName + FLOW_RULES_KEY_POSTFIX,
                 s -> JSON.parseArray(s, FlowRuleEntity.class),
                 JSON::toJSONString
         );
     }
 
-  /*  @Bean
-    public ApolloRuleProviderPublisher<List<FlowRuleEntity>> flowRuleProviderPublisher() {
+    @Bean
+    public ApolloRuleProviderPublisher<List<GatewayFlowRuleEntity>> gwFlowRuleProviderPublisher() {
         return new ApolloRuleProviderPublisher<>(
                 apolloApiClient(),
-                appName -> appName + "-flow-rules",
-                s -> JSON.parseArray(s, FlowRuleEntity.class),
+                appName -> appName + GW_FLOW_RULES_KEY_POSTFIX,
+                s -> JSON.parseArray(s, GatewayFlowRuleEntity.class),
                 JSON::toJSONString
         );
-    }*/
+    }
+
+    @Bean
+    public ApolloRuleProviderPublisher<List<ApiDefinitionEntity>> gwApiDefinitionProviderPublisher() {
+        return new ApolloRuleProviderPublisher<>(
+                apolloApiClient(),
+                appName -> appName + GW_API_DEFINITIONS_KEY_POSTFIX,
+                s -> JSON.parseArray(s, ApiDefinitionEntity.class),
+                JSON::toJSONString
+        );
+    }
+
+    @Bean
+    public ApolloRuleProviderPublisher<List<SystemRuleEntity>> systemRuleProviderPublisher() {
+        return new ApolloRuleProviderPublisher<>(
+                apolloApiClient(),
+                appName -> appName + SYSTEM_RULES_KEY_POSTFIX,
+                s -> JSON.parseArray(s, SystemRuleEntity.class),
+                JSON::toJSONString
+        );
+    }
+
+    @Bean
+    public ApolloRuleProviderPublisher<List<DegradeRuleEntity>> degradeRuleProviderPublisher() {
+        return new ApolloRuleProviderPublisher<>(
+                apolloApiClient(),
+                appName -> appName + DEGRADE_RULES_KEY_POSTFIX,
+                s -> JSON.parseArray(s, DegradeRuleEntity.class),
+                JSON::toJSONString
+        );
+    }
+
+    @Bean
+    public ApolloRuleProviderPublisher<List<ParamFlowRuleEntity>> paramFlowRuleProviderPublisher() {
+        return new ApolloRuleProviderPublisher<>(
+                apolloApiClient(),
+                appName -> appName + PARAM_FLOW_RULES_KEY_POSTFIX,
+                s -> JSON.parseArray(s, ParamFlowRuleEntity.class),
+                JSON::toJSONString
+        );
+    }
+
+    @Bean
+    public ApolloRuleProviderPublisher<List<AuthorityRuleEntity>> authorityRuleProviderPublisher() {
+        return new ApolloRuleProviderPublisher<>(
+                apolloApiClient(),
+                appName -> appName + AUTHORITY_RULES_KEY_POSTFIX,
+                s -> JSON.parseArray(s, AuthorityRuleEntity.class),
+                JSON::toJSONString
+        );
+    }
+
 }

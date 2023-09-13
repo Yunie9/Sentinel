@@ -23,6 +23,7 @@ import com.alibaba.csp.sentinel.dashboard.client.SentinelApiClient;
 import com.alibaba.csp.sentinel.dashboard.discovery.AppManagement;
 import com.alibaba.csp.sentinel.dashboard.discovery.MachineInfo;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
+import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleProviderPublisher;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.util.StringUtil;
 
@@ -53,8 +54,10 @@ public class AuthorityRuleController {
 
     private final Logger logger = LoggerFactory.getLogger(AuthorityRuleController.class);
 
+    /*@Autowired
+    private SentinelApiClient sentinelApiClient;*/
     @Autowired
-    private SentinelApiClient sentinelApiClient;
+    private ApolloRuleProviderPublisher<List<AuthorityRuleEntity>> providerPublisher;
     @Autowired
     private RuleRepository<AuthorityRuleEntity, Long> repository;
     @Autowired
@@ -63,22 +66,23 @@ public class AuthorityRuleController {
     @GetMapping("/rules")
     @AuthAction(PrivilegeType.READ_RULE)
     public Result<List<AuthorityRuleEntity>> apiQueryAllRulesForMachine(@RequestParam String app,
-                                                                        @RequestParam String ip,
-                                                                        @RequestParam Integer port) {
+                                                                        @RequestParam(required = false) String ip,
+                                                                        @RequestParam(required = false) Integer port) {
         if (StringUtil.isEmpty(app)) {
             return Result.ofFail(-1, "app cannot be null or empty");
         }
-        if (StringUtil.isEmpty(ip)) {
+        /*if (StringUtil.isEmpty(ip)) {
             return Result.ofFail(-1, "ip cannot be null or empty");
         }
         if (port == null || port <= 0) {
             return Result.ofFail(-1, "Invalid parameter: port");
-        }
+        }*/
         if (!appManagement.isValidMachineOfApp(app, ip)) {
             return Result.ofFail(-1, "given ip does not belong to given app");
         }
         try {
-            List<AuthorityRuleEntity> rules = sentinelApiClient.fetchAuthorityRulesOfMachine(app, ip, port);
+            // List<AuthorityRuleEntity> rules = sentinelApiClient.fetchAuthorityRulesOfMachine(app, ip, port);
+            List<AuthorityRuleEntity> rules = providerPublisher.getRules(app);
             rules = repository.saveAll(rules);
             return Result.ofSuccess(rules);
         } catch (Throwable throwable) {
@@ -94,12 +98,12 @@ public class AuthorityRuleController {
         if (StringUtil.isBlank(entity.getApp())) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-        if (StringUtil.isBlank(entity.getIp())) {
+        /*if (StringUtil.isBlank(entity.getIp())) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (entity.getPort() == null || entity.getPort() <= 0) {
             return Result.ofFail(-1, "port can't be null");
-        }
+        }*/
         if (entity.getRule() == null) {
             return Result.ofFail(-1, "rule can't be null");
         }
@@ -191,7 +195,15 @@ public class AuthorityRuleController {
     }
 
     private boolean publishRules(String app, String ip, Integer port) {
-        List<AuthorityRuleEntity> rules = repository.findAllByMachine(MachineInfo.of(app, ip, port));
-        return sentinelApiClient.setAuthorityRuleOfMachine(app, ip, port, rules);
+        // List<AuthorityRuleEntity> rules = repository.findAllByMachine(MachineInfo.of(app, ip, port));
+        // return sentinelApiClient.setAuthorityRuleOfMachine(app, ip, port, rules);
+        List<AuthorityRuleEntity> rules = repository.findAllByApp(app);
+        try {
+            providerPublisher.publish(app, rules);
+            return true;
+        } catch (Throwable throwable) {
+            logger.error("Failed to publish authority rules", throwable);
+            return false;
+        }
     }
 }
