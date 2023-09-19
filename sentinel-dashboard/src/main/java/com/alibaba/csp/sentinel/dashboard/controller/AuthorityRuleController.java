@@ -19,11 +19,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
-import com.alibaba.csp.sentinel.dashboard.client.SentinelApiClient;
 import com.alibaba.csp.sentinel.dashboard.discovery.AppManagement;
-import com.alibaba.csp.sentinel.dashboard.discovery.MachineInfo;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
-import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleProviderPublisher;
+import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleCenter;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.util.StringUtil;
 
@@ -57,7 +55,7 @@ public class AuthorityRuleController {
     /*@Autowired
     private SentinelApiClient sentinelApiClient;*/
     @Autowired
-    private ApolloRuleProviderPublisher<List<AuthorityRuleEntity>> providerPublisher;
+    private ApolloRuleCenter<List<AuthorityRuleEntity>> providerPublisher;
     @Autowired
     private RuleRepository<AuthorityRuleEntity, Long> repository;
     @Autowired
@@ -114,7 +112,7 @@ public class AuthorityRuleController {
             return Result.ofFail(-1, "limitApp should be valid");
         }
         if (entity.getStrategy() != RuleConstant.AUTHORITY_WHITE
-            && entity.getStrategy() != RuleConstant.AUTHORITY_BLACK) {
+                && entity.getStrategy() != RuleConstant.AUTHORITY_BLACK) {
             return Result.ofFail(-1, "Unknown strategy (must be blacklist or whitelist)");
         }
         return null;
@@ -133,12 +131,10 @@ public class AuthorityRuleController {
         entity.setGmtModified(date);
         try {
             entity = repository.save(entity);
+            publishRules(entity.getApp(), entity.getIp(), entity.getPort());
         } catch (Throwable throwable) {
             logger.error("Failed to add authority rule", throwable);
             return Result.ofThrowable(-1, throwable);
-        }
-        if (!publishRules(entity.getApp(), entity.getIp(), entity.getPort())) {
-            logger.info("Publish authority rules failed after rule add");
         }
         return Result.ofSuccess(entity);
     }
@@ -163,12 +159,10 @@ public class AuthorityRuleController {
             if (entity == null) {
                 return Result.ofFail(-1, "Failed to save authority rule");
             }
+            publishRules(entity.getApp(), entity.getIp(), entity.getPort());
         } catch (Throwable throwable) {
             logger.error("Failed to save authority rule", throwable);
             return Result.ofThrowable(-1, throwable);
-        }
-        if (!publishRules(entity.getApp(), entity.getIp(), entity.getPort())) {
-            logger.info("Publish authority rules failed after rule update");
         }
         return Result.ofSuccess(entity);
     }
@@ -185,25 +179,17 @@ public class AuthorityRuleController {
         }
         try {
             repository.delete(id);
+            publishRules(oldEntity.getApp(), oldEntity.getIp(), oldEntity.getPort());
         } catch (Exception e) {
             return Result.ofFail(-1, e.getMessage());
-        }
-        if (!publishRules(oldEntity.getApp(), oldEntity.getIp(), oldEntity.getPort())) {
-            logger.error("Publish authority rules failed after rule delete");
         }
         return Result.ofSuccess(id);
     }
 
-    private boolean publishRules(String app, String ip, Integer port) {
+    private void publishRules(String app, String ip, Integer port) throws Exception {
         // List<AuthorityRuleEntity> rules = repository.findAllByMachine(MachineInfo.of(app, ip, port));
         // return sentinelApiClient.setAuthorityRuleOfMachine(app, ip, port, rules);
         List<AuthorityRuleEntity> rules = repository.findAllByApp(app);
-        try {
-            providerPublisher.publish(app, rules);
-            return true;
-        } catch (Throwable throwable) {
-            logger.error("Failed to publish authority rules", throwable);
-            return false;
-        }
+        providerPublisher.publish(app, rules);
     }
 }

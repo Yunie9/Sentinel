@@ -20,15 +20,12 @@ import java.util.List;
 
 import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
-import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.DegradeRuleEntity;
 import com.alibaba.csp.sentinel.dashboard.discovery.AppManagement;
 import com.alibaba.csp.sentinel.dashboard.repository.rule.RuleRepository;
-import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleProviderPublisher;
+import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleCenter;
 import com.alibaba.csp.sentinel.util.StringUtil;
 
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.SystemRuleEntity;
-import com.alibaba.csp.sentinel.dashboard.discovery.MachineInfo;
-import com.alibaba.csp.sentinel.dashboard.client.SentinelApiClient;
 import com.alibaba.csp.sentinel.dashboard.domain.Result;
 
 import org.slf4j.Logger;
@@ -52,7 +49,7 @@ public class SystemController {
     /* @Autowired
      private SentinelApiClient sentinelApiClient;*/
     @Autowired
-    private ApolloRuleProviderPublisher<List<SystemRuleEntity>> providerPublisher;
+    private ApolloRuleCenter<List<SystemRuleEntity>> providerPublisher;
     @Autowired
     private AppManagement appManagement;
 
@@ -160,12 +157,10 @@ public class SystemController {
         entity.setGmtModified(date);
         try {
             entity = repository.save(entity);
+            publishRules(app, ip, port);
         } catch (Throwable throwable) {
             logger.error("Add SystemRule error", throwable);
             return Result.ofThrowable(-1, throwable);
-        }
-        if (!publishRules(app, ip, port)) {
-            logger.warn("Publish system rules fail after rule add");
         }
         return Result.ofSuccess(entity);
     }
@@ -222,12 +217,10 @@ public class SystemController {
         entity.setGmtModified(date);
         try {
             entity = repository.save(entity);
+            publishRules(entity.getApp(), entity.getIp(), entity.getPort());
         } catch (Throwable throwable) {
             logger.error("save error:", throwable);
             return Result.ofThrowable(-1, throwable);
-        }
-        if (!publishRules(entity.getApp(), entity.getIp(), entity.getPort())) {
-            logger.info("publish system rules fail after rule update");
         }
         return Result.ofSuccess(entity);
     }
@@ -244,26 +237,18 @@ public class SystemController {
         }
         try {
             repository.delete(id);
+            publishRules(oldEntity.getApp(), oldEntity.getIp(), oldEntity.getPort());
         } catch (Throwable throwable) {
             logger.error("delete error:", throwable);
             return Result.ofThrowable(-1, throwable);
         }
-        if (!publishRules(oldEntity.getApp(), oldEntity.getIp(), oldEntity.getPort())) {
-            logger.info("publish system rules fail after rule delete");
-        }
         return Result.ofSuccess(id);
     }
 
-    private boolean publishRules(String app, String ip, Integer port) {
+    private void publishRules(String app, String ip, Integer port) throws Exception {
         // List<SystemRuleEntity> rules = repository.findAllByMachine(MachineInfo.of(app, ip, port));
         // return sentinelApiClient.setSystemRuleOfMachine(app, ip, port, rules);
         List<SystemRuleEntity> rules = repository.findAllByApp(app);
-        try {
-            providerPublisher.publish(app, rules);
-            return true;
-        } catch (Throwable throwable) {
-            logger.error("Failed to publish degrade rules, app={}", app, throwable);
-            return false;
-        }
+        providerPublisher.publish(app, rules);
     }
 }

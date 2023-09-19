@@ -23,13 +23,10 @@ import java.util.concurrent.ExecutionException;
 
 import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
 import com.alibaba.csp.sentinel.dashboard.client.CommandNotFoundException;
-import com.alibaba.csp.sentinel.dashboard.client.SentinelApiClient;
-import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.DegradeRuleEntity;
 import com.alibaba.csp.sentinel.dashboard.discovery.AppManagement;
-import com.alibaba.csp.sentinel.dashboard.discovery.MachineInfo;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
-import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleProviderPublisher;
+import com.alibaba.csp.sentinel.dashboard.rule.apollo.ApolloRuleCenter;
 import com.alibaba.csp.sentinel.dashboard.util.AsyncUtils;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.util.StringUtil;
@@ -65,7 +62,7 @@ public class ParamFlowRuleController {
     /*@Autowired
     private SentinelApiClient sentinelApiClient;*/
     @Autowired
-    private ApolloRuleProviderPublisher<List<ParamFlowRuleEntity>> providerPublisher;
+    private ApolloRuleCenter<List<ParamFlowRuleEntity>> providerPublisher;
     @Autowired
     private AppManagement appManagement;
     @Autowired
