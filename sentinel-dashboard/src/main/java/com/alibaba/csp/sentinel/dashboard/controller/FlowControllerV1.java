@@ -76,12 +76,12 @@ public class FlowControllerV1 {
         if (StringUtil.isEmpty(app)) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-       /* if (StringUtil.isEmpty(ip)) {
+        if (StringUtil.isEmpty(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
         if (!appManagement.isValidMachineOfApp(app, ip)) {
             return Result.ofFail(-1, "given ip does not belong to given app");
         }
@@ -100,12 +100,12 @@ public class FlowControllerV1 {
         if (StringUtil.isBlank(entity.getApp())) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-        /*if (StringUtil.isBlank(entity.getIp())) {
+        if (StringUtil.isBlank(entity.getIp())) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (entity.getPort() == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
         if (!appManagement.isValidMachineOfApp(entity.getApp(), entity.getIp())) {
             return Result.ofFail(-1, "given ip does not belong to given app");
         }
@@ -161,7 +161,6 @@ public class FlowControllerV1 {
         entity.setResource(entity.getResource().trim());
         try {
             entity = repository.save(entity);
-
             publishRules(entity.getApp(), entity.getIp(), entity.getPort()).get(5000, TimeUnit.MILLISECONDS);
             return Result.ofSuccess(entity);
         } catch (Throwable t) {
@@ -240,7 +239,6 @@ public class FlowControllerV1 {
             if (entity == null) {
                 return Result.ofFail(-1, "save entity fail: null");
             }
-
             publishRules(entity.getApp(), entity.getIp(), entity.getPort()).get(5000, TimeUnit.MILLISECONDS);
             return Result.ofSuccess(entity);
         } catch (Throwable t) {

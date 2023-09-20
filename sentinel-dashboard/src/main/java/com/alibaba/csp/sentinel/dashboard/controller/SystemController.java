@@ -46,8 +46,10 @@ public class SystemController {
 
     @Autowired
     private RuleRepository<SystemRuleEntity, Long> repository;
+
     /* @Autowired
      private SentinelApiClient sentinelApiClient;*/
+
     @Autowired
     private ApolloRuleCenter<List<SystemRuleEntity>> providerPublisher;
     @Autowired

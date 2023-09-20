@@ -68,12 +68,12 @@ public class GatewayFlowRuleController {
         if (StringUtil.isEmpty(app)) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-        /*if (StringUtil.isEmpty(ip)) {
+        if (StringUtil.isEmpty(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
 
         try {
             // List<GatewayFlowRuleEntity> rules = sentinelApiClient.fetchGatewayFlowRules(app, ip, port).get();
@@ -99,15 +99,15 @@ public class GatewayFlowRuleController {
         entity.setApp(app.trim());
 
         String ip = reqVo.getIp();
-        /*if (StringUtil.isBlank(ip)) {
+        if (StringUtil.isBlank(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
-        }*/
+        }
         entity.setIp(ip.trim());
 
         Integer port = reqVo.getPort();
-        /*if (port == null) {
+        if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
         entity.setPort(port);
 
         // API类型, Route ID或API分组

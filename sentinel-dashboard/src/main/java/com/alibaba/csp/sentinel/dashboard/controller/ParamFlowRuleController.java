@@ -61,6 +61,7 @@ public class ParamFlowRuleController {
 
     /*@Autowired
     private SentinelApiClient sentinelApiClient;*/
+
     @Autowired
     private ApolloRuleCenter<List<ParamFlowRuleEntity>> providerPublisher;
     @Autowired

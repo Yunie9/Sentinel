@@ -66,12 +66,12 @@ public class GatewayApiController {
         if (StringUtil.isEmpty(app)) {
             return Result.ofFail(-1, "app can't be null or empty");
         }
-        /*if (StringUtil.isEmpty(ip)) {
+        if (StringUtil.isEmpty(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
         }
         if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
 
         try {
             // List<ApiDefinitionEntity> apis = sentinelApiClient.fetchApis(app, ip, port).get();
@@ -97,15 +97,15 @@ public class GatewayApiController {
         entity.setApp(app.trim());
 
         String ip = reqVo.getIp();
-        /*if (StringUtil.isBlank(ip)) {
+        if (StringUtil.isBlank(ip)) {
             return Result.ofFail(-1, "ip can't be null or empty");
-        }*/
+        }
         entity.setIp(ip.trim());
 
         Integer port = reqVo.getPort();
-        /*if (port == null) {
+        if (port == null) {
             return Result.ofFail(-1, "port can't be null");
-        }*/
+        }
         entity.setPort(port);
 
         // API名称
@@ -248,8 +248,6 @@ public class GatewayApiController {
     }
 
     private void publishApis(String app, String ip, Integer port) throws Exception {
-        // List<ApiDefinitionEntity> apis = repository.findAllByMachine(MachineInfo.of(app, ip, port));
-        // return sentinelApiClient.modifyApis(app, ip, port, apis);
         List<ApiDefinitionEntity> apis = repository.findAllByApp(app);
         providerPublisher.publish(app, apis);
     }
